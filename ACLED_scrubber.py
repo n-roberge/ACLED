@@ -4,6 +4,8 @@ import pandas as pd
 fn = "2012-2022_acled_kenya_scrubbed"
 df = pd.read_csv(fn + ".csv")
 
+writer = pd.ExcelWriter(fn + '_monthly_count.xlsx', engine='xlsxwriter')
+
 # convert to date format
 df['Date'] = pd.to_datetime(df['event_date'], errors='coerce')
 
@@ -16,9 +18,10 @@ df_monthly = df.groupby(df['Date'].dt.strftime('%Y-%m'))['event_id_cnty'].count(
 
 # group by season
 df['year'] = pd.DatetimeIndex(df['event_date']).year
+
 df_season = df.groupby(['year', 'season']).size().reset_index(name='count')
 
-# df_season.to_excel(fn + '_monthly_count.xlsx', sheet_name='season count', index=False)
+df_season.to_excel(writer, sheet_name='season count', index=False)
 
 #print sum of seasons
 # pivot the DataFrame so that the 'Dry' and 'Rainy' seasons are in separate columns
@@ -33,4 +36,6 @@ print('Dry season count:', dry_sum)
 print('Rainy season count:', rainy_sum)
 
 # export to xlsx
-# df_monthly.to_excel(fn + '_monthly_count.xlsx', sheet_name='monthly count', index=False)
+df_monthly.to_excel(writer, sheet_name='monthly count', index=False)
+
+writer.save()
