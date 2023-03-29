@@ -1,7 +1,8 @@
 import pandas as pd
 
-# insert raw csv here
-df = pd.read_csv("acled_no_protests_no_urban.csv")
+# insert raw csv here 
+fn = "2012-2022_acled_kenya_scrubbed"
+df = pd.read_csv(fn + ".csv")
 
 # convert to date format
 df['Date'] = pd.to_datetime(df['event_date'], errors='coerce')
@@ -10,7 +11,26 @@ df['Date'] = pd.to_datetime(df['event_date'], errors='coerce')
 # df_monthly = (df.groupby([pd.Grouper(key='Date', freq='MS')])['count']).sum()
 
 # group by date, number of events
-df_monthly = (df.groupby([pd.Grouper(key='Date', freq='MS')])['data_id']).count()
+#df_monthly = (df.groupby([pd.Grouper(key='Date', freq='MS')])['event_id_cnty']).count()
+df_monthly = df.groupby(df['Date'].dt.strftime('%Y-%m'))['event_id_cnty'].count().reset_index(name='count')
 
-# export to csv
-df_monthly.to_csv('acled_monthly_kenya_no_urban_no_protests.csv')
+# group by season
+df['year'] = pd.DatetimeIndex(df['event_date']).year
+df_season = df.groupby(['year', 'season']).size().reset_index(name='count')
+
+# df_season.to_excel(fn + '_monthly_count.xlsx', sheet_name='season count', index=False)
+
+#print sum of seasons
+# pivot the DataFrame so that the 'Dry' and 'Rainy' seasons are in separate columns
+df_pivot = df_season.pivot_table(index='year', columns='season', values='count', fill_value=0)
+
+# sum the counts for the 'Dry' and 'Rainy' seasons separately
+dry_sum = df_pivot['dry'].sum()
+rainy_sum = df_pivot['rainy'].sum()
+
+# print the sums
+print('Dry season count:', dry_sum)
+print('Rainy season count:', rainy_sum)
+
+# export to xlsx
+# df_monthly.to_excel(fn + '_monthly_count.xlsx', sheet_name='monthly count', index=False)
